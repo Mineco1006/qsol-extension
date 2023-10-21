@@ -1,0 +1,16 @@
+
+
+qubic-wasm/target
+target
+
+/Cargo.lock
+/qubic-wasm/Cargo.lock
+/qubic-wasm/pkg
+**/*.rs.bk
+/qubic-wasm/wasm-pack.log
+
+
+/extension/public/build
+/extension/node_modules/
+
+/extension/.DS_Store

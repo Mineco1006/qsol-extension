@@ -1,0 +1,41 @@
+{
+    "manifest_version": 3,
+    "name": "qsol",
+    "version": "0.1.7",
+
+    "description": "Browser extension for the QUBIC network",
+
+    "action": {
+        "default_popup": "index.html"
+    },
+
+    "permissions": ["storage", "activeTab", "tabs", "notifications"],
+
+    "content_security_policy": {
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval';"
+    },
+
+    "icons": {
+        "48": "./assets/qbc48.png",
+        "128": "./assets/qbc128.png"
+    },
+
+    "background": {
+        "service_worker": "build/background.js",
+        "type": "module"
+    },
+
+    "content_scripts": [
+        {
+            "world": "MAIN",
+            "all_frames": true,
+            "run_at": "document_idle",
+            "matches": ["<all_urls>"],
+            "js": ["build/injection.js"]
+        },
+        {
+            "matches": ["<all_urls>"],
+            "js": ["build/message_handler.js"]
+        }
+    ]
+}
