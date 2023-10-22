@@ -42,6 +42,26 @@ window.addEventListener("message", async (event) => {
                     }
                 }
             });
+        } else if (!connected && event.data.type === "requestAccounts") {
+            try {
+                await browser.runtime.sendMessage({ type: event.data.type, url: url });
+            } catch (e) {
+                console.log(e);
+            }
+            
+            // request trigger
+            await browser.storage.session.set({"requestFunction": {...event.data, url: url}});
+
+            // response listener
+            browser.storage.session.onChanged.addListener(changes => {
+                if (changes.responseFunction) {
+                    if (changes.responseFunction.newValue.type === "accepted") {
+                        window.postMessage({ type: "accepted", value: {...changes.responseFunction.newValue.value} }, "*");
+                    } else {
+                        window.postMessage({ type: "rejected" }, "*");
+                    }
+                }
+            });
         } else if (event.data.type === "requestAccounts") {
             let ids = keystore.wallets.map(w => w.id);
             let idx = ids.findIndex(val => val == activeId);
