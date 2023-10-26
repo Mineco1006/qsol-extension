@@ -3,9 +3,9 @@ mod crypto;
 
 use crypto::{hash_password, KeystoreFile, encrypt, decrypt};
 use kangarootwelve::KangarooTwelve;
-use qubic_rpc_types::{JsonRpcRequest, TransactionParams, JsonRpcResponse};
+use qubic_rpc_types::{JsonRpcRequest, JsonRpcResponse};
 use qubic_tcp_types::types::{Transaction, RawTransaction};
-use qubic_types::{QubicId, traits::AsByteEncoded, QubicWallet, Signature};
+use qubic_types::{QubicId, QubicWallet, Signature};
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
 use wbg_rand::Rng;
@@ -32,7 +32,7 @@ pub fn check_password(keystore: JsValue, rhs: &str) -> Result<bool, String> {
 #[wasm_bindgen]
 pub fn set_password(pwd: &str) -> JsValue {
     let mut rng = wbg_rand::wasm_rng();
-    let salt: [u8; 4] = rng.gen();;
+    let salt: [u8; 4] = rng.gen();
     let pwd_hash = hash_password(pwd, salt);
 
     let keystore = KeystoreFile { pwd: pwd_hash, salt, wallets: Vec::new() };
@@ -150,11 +150,8 @@ pub async fn send_transaction(keystore: JsValue, pwd: &str, account_index: usize
 
     let signature = wallet.sign(&transaction);
 
-    let params = TransactionParams {
-        from: wallet.public_key,
-        to,
-        amount,
-        tick,
+    let params = Transaction {
+        raw_transaction: transaction,
         signature
     };
 

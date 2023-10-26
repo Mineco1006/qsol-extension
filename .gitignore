@@ -14,3 +14,5 @@ target
 /extension/node_modules/
 
 /extension/.DS_Store
+
+build.bat
