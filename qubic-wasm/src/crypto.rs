@@ -2,7 +2,6 @@ use aes_gcm_siv::{Aes256GcmSiv, Key, Nonce, KeyInit, aead::Aead};
 use qubic_types::{QubicWallet, QubicId};
 use sha3::{Sha3_512, Digest, Sha3_256};
 use serde::{Serialize, Deserialize};
-use wasm_bindgen::prelude::wasm_bindgen;
 use wbg_rand::Rng;
 
 

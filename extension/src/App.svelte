@@ -21,7 +21,7 @@
 	}
 
 	let settings = {
-		rpc: "http://148.251.153.180:2003",
+		rpc: "https://rpc.qubic.solutions",
 		num_fmt: "1e0"
 	}
 

@@ -1,10 +1,12 @@
 mod utils;
 mod crypto;
 
+use std::str::FromStr;
+
 use crypto::{hash_password, KeystoreFile, encrypt, decrypt};
 use kangarootwelve::KangarooTwelve;
-use qubic_rpc_types::{JsonRpcRequest, JsonRpcResponse};
-use qubic_tcp_types::types::{Transaction, RawTransaction};
+use qubic_rpc_types::{QubicJsonRpcRequest, QubicJsonRpcResponse, RequestMethods, RequestResults, ResponseType};
+use qubic_tcp_types::types::transactions::{Transaction, RawTransaction};
 use qubic_types::{QubicId, QubicWallet, Signature};
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
@@ -68,17 +70,27 @@ pub async fn get_entities(keystore: JsValue, jsonrpc: &str) -> Result<JsValue, S
     let mut entities = Vec::with_capacity(keystore.wallets.len());
 
     for wallet in &keystore.wallets {
-        let req = JsonRpcRequest::RequestEntity { jsonrpc: "2.0".to_string(), id: 0, params: wallet.id.clone() };
+        let req = QubicJsonRpcRequest::new(0, qubic_rpc_types::RequestMethods::RequestEntity(wallet.id)); //{ jsonrpc: "2.0".to_string(), id: 0, params: wallet.id.clone() };
 
         match client.post(jsonrpc).json(&req).send().await {
             Ok(r) => {
-                match r.json().await {
+                match r.json::<QubicJsonRpcResponse>().await {
                     Ok(r) => {
-                        if let JsonRpcResponse::RequestEntity { jsonrpc: _, id: _, result, error: _ } = r {
+
+                        match r.response {
+                            ResponseType::Result(r) => {
+                                if let RequestResults::RequestEntity(e) = r {
+                                    entities.push(e);
+                                }
+                            },
+                            _ => ()
+                        }
+
+                        /*if let JsonRpcResponse::RequestEntity { jsonrpc: _, id: _, result, error: _ } = r {
                             if let Some(r) = result {
                                 entities.push(r);
                             }
-                        }
+                        }*/
                     },
                     _ => ()
                 }
@@ -94,23 +106,19 @@ pub async fn get_entities(keystore: JsValue, jsonrpc: &str) -> Result<JsValue, S
 pub async fn get_current_tick(jsonrpc: &str) -> Result<u32, String> {
     let client = reqwest::Client::new();
 
-    let req = JsonRpcRequest::RequestCurrentTickInfo { jsonrpc: "2.0".to_string(), id: 0 };
+    let req = QubicJsonRpcRequest::new(0, RequestMethods::RequestCurrentTickInfo);
 
     match client.post(jsonrpc).json(&req).send().await {
         Ok(res) => {
-            let res: JsonRpcResponse = res.json().await.unwrap();
+            let res: QubicJsonRpcResponse = res.json().await.unwrap();
 
-            if let JsonRpcResponse::RequestCurrentTickInfo { jsonrpc: _, id: _, result, error } = res {
-                if let Some(e) = error {
-                    Err(e)
-                } else if let Some(r) = result {
-                    Ok(r.tick)
-                } else {
-                    Err("Invalid response!".to_string())
+            if let ResponseType::Result(r) = res.response {
+                if let RequestResults::RequestCurrentTickInfo(ct) = r {
+                    return Ok(ct.tick);
                 }
-            } else {
-                Err("Invalid response".to_string())
             }
+
+            Err("RequestTickInfo errored".to_owned())
         },
         Err(e) => {
             Err(e.to_string())
@@ -148,14 +156,14 @@ pub async fn send_transaction(keystore: JsValue, pwd: &str, account_index: usize
         input_size
     };
 
-    let signature = wallet.sign(&transaction);
+    let signature = wallet.sign(transaction);
 
     let params = Transaction {
         raw_transaction: transaction,
         signature
     };
 
-    let req = JsonRpcRequest::SendTransaction { jsonrpc: "2.0".to_string(), id: 0, params };
+    let req = QubicJsonRpcRequest::new(0, RequestMethods::SendTransaction(params));
 
     match client.post(jsonrpc).json(&req).send().await {
         Ok(_) => Ok(()),
