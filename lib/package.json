@@ -1,5 +1,5 @@
 {
-  "name": "qsol-extension",
+  "name": "@qsol/extension",
   "version": "0.1.0",
   "description": "API for Qsol Extension",
   "main": "./dist/index.js",
